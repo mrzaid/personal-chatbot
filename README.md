@@ -1,0 +1,54 @@
+---
+title: Chat with Zaid Ahmed
+emoji: 🚀
+colorFrom: green
+colorTo: yellow
+sdk: docker
+app_port: 8501
+tags:
+- streamlit
+pinned: false
+short_description: A chatbot about my profile, experience, education and skills
+---
+
+# My Profile Chatbot
+
+A chatbot about my profile, experience, education and skills
+
+## Project Structure
+
+- basic.py: 
+    - main workflow of the chatbot in cli
+    - run with `python qa_chain_cli.py`
+- `src/app.py`
+    - Streamlit app for QA chatbot
+    - run with `streamlit run src/app.py`
+
+
+## Todos:
+
+- update readme for project structure, esp data, venv and env
+- add more data
+    - add updated cv with project
+    - educational docs
+    - experience letters
+    - project docs/ reports/ readme
+    - linkedin stuff: get more from linkedin csv
+    - add data json to enter extra details, like skills expereince etc
+- better llm selection: using gemini for now
+    - add option to show source document for answers
+    - add ui selection for gemini free models
+    - improve qa pipeline and prompt
+    - add prompt history for agent mem
+    - error handling in chat qa
+
+- add feature to enter job description and show how well my profile aligns with it
+
+- add sample Q/A cards
+
+- make router chains for better response
+    - add router chains for education, skills, experience and default
+- UI: improve UI
+    - chat sequence
+- deploy:
+    - improve the huggingface guthub repo hosting setup

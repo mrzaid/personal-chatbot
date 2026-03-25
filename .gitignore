@@ -1,0 +1,4 @@
+venv/
+src/data/
+# src/data_index/
+src/.env
