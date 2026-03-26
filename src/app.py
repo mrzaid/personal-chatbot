@@ -78,34 +78,88 @@ st.set_page_config(
     page_title="Zaid Ahmed · Profile Assistant",
     page_icon="◆",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
+    menu_items={
+        "Get Help": None,
+        "Report a bug": None,
+        "About": None,
+    },
 )
 
 st.markdown(
     """
     <style>
-        .block-container { padding-top: 1.25rem; padding-bottom: 2rem; max-width: 880px; }
-        h1.hero-title {
-            font-size: 1.75rem !important;
+        /* Hide top chrome (Streamlit header / toolbar) */
+        header[data-testid="stHeader"] { display: none !important; }
+        div[data-testid="stToolbar"] { display: none !important; }
+        div[data-testid="stDecoration"] { display: none !important; }
+        div[data-testid="stDeployButton"] { display: none !important; }
+        footer { visibility: hidden !important; height: 0 !important; }
+
+        /* Claude-like warm canvas */
+        .stApp {
+            background: linear-gradient(
+                165deg,
+                #f7f4ef 0%,
+                #efeae2 38%,
+                #e8e3da 72%,
+                #e2ddd4 100%
+            ) !important;
+            background-attachment: fixed !important;
+        }
+        section[data-testid="stMain"],
+        div[data-testid="stAppViewContainer"],
+        .main .block-container {
+            background-color: transparent !important;
+        }
+
+        /* Wider, centered chat column */
+        .block-container {
+            max-width: min(1180px, 96vw) !important;
+            padding-top: 0.85rem !important;
+            padding-bottom: 2.5rem !important;
+            padding-left: clamp(1rem, 4vw, 2.5rem) !important;
+            padding-right: clamp(1rem, 4vw, 2.5rem) !important;
+        }
+        div[data-testid="stMain"] > div {
+            padding-top: 0.25rem !important;
+        }
+
+        .hero-title {
+            font-size: 1.85rem !important;
             font-weight: 650 !important;
             letter-spacing: -0.03em;
-            color: #0f172a !important;
-            margin-bottom: 0.15rem !important;
+            color: #2c2825 !important;
+            margin-bottom: 0.2rem !important;
         }
         p.hero-sub {
-            color: #64748b;
+            color: #5c5650;
             font-size: 0.95rem;
             margin-top: 0;
         }
-        div[data-testid="stSidebarContent"] {
-            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-        }
         .starter-wrap { margin-top: 0.35rem; }
+
+        /* Chat bubbles: soft paper on warm ground */
+        div[data-testid="stChatMessage"] {
+            border-radius: 14px !important;
+            background-color: rgba(255, 252, 248, 0.72) !important;
+            border: 1px solid rgba(44, 40, 37, 0.08) !important;
+            box-shadow: 0 1px 3px rgba(44, 40, 37, 0.06) !important;
+        }
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border-radius: 12px;
         }
-        div[data-testid="stChatMessage"] {
-            border-radius: 12px;
+        /* Chat input bar */
+        div[data-testid="stChatInput"] {
+            border-radius: 14px !important;
+            background-color: rgba(255, 252, 248, 0.9) !important;
+            border: 1px solid rgba(44, 40, 37, 0.1) !important;
+        }
+        /* Settings expander */
+        details[data-testid="stExpander"] {
+            background-color: rgba(255, 252, 248, 0.55) !important;
+            border: 1px solid rgba(44, 40, 37, 0.08) !important;
+            border-radius: 12px !important;
         }
     </style>
     """,
@@ -121,21 +175,19 @@ if not INDEX_DIR.exists():
 
 hf_token = HF_API_TOKEN
 
-st.sidebar.markdown("### Settings")
-if not hf_token:
-    st.sidebar.warning("HUGGING_FACE_API_TOKEN is not set in `src/.env` (optional for local embeddings).")
-if not GOOGLE_API_KEY:
-    st.sidebar.error(
-        "Set GOOGLE_API_KEY in src/.env using a key from https://aistudio.google.com/app/apikey — then restart the app."
-    )
-
-show_sources = st.sidebar.toggle("Show source excerpts", value=False)
-st.sidebar.divider()
-st.sidebar.caption("Models")
-st.sidebar.code(EMBED_MODEL_NAME, language=None)
-st.sidebar.caption("Embedding model")
-st.sidebar.code(LLM_MODEL_NAME, language=None)
-st.sidebar.caption("Chat model")
+with st.expander("Settings", expanded=False):
+    if not hf_token:
+        st.warning("HUGGING_FACE_API_TOKEN is not set in `src/.env` (optional for local embeddings).")
+    if not GOOGLE_API_KEY:
+        st.error(
+            "Set GOOGLE_API_KEY in src/.env using a key from https://aistudio.google.com/app/apikey — then restart the app."
+        )
+    show_sources = st.toggle("Show source excerpts", value=False)
+    st.caption("Models")
+    st.code(EMBED_MODEL_NAME, language=None)
+    st.caption("Embedding model")
+    st.code(LLM_MODEL_NAME, language=None)
+    st.caption("Chat model")
 
 k = 4
 max_new_tokens = 512
@@ -203,50 +255,48 @@ if pending:
             answer, sources = f"[error] {err}", []
         st.session_state.history.append((pending, answer, sources))
 
-_, center, _ = st.columns([1, 2.2, 1])
-with center:
-    st.markdown('<p class="hero-title">Zaid Ahmed</p>', unsafe_allow_html=True)
-    st.markdown(
-        '<p class="hero-sub">Profile assistant · Grounded answers from resume & profile documents</p>',
-        unsafe_allow_html=True,
-    )
-    st.divider()
+st.markdown('<p class="hero-title">Zaid Ahmed</p>', unsafe_allow_html=True)
+st.markdown(
+    '<p class="hero-sub">Profile assistant · Grounded answers from resume & profile documents</p>',
+    unsafe_allow_html=True,
+)
+st.divider()
 
-    for q, a, srcs in st.session_state.history:
-        with st.chat_message("user"):
-            st.markdown(q)
-        with st.chat_message("assistant"):
-            st.markdown(a)
-            if show_sources:
-                render_sources(srcs)
+for q, a, srcs in st.session_state.history:
+    with st.chat_message("user"):
+        st.markdown(q)
+    with st.chat_message("assistant"):
+        st.markdown(a)
+        if show_sources:
+            render_sources(srcs)
 
-    if not st.session_state.history:
-        with st.chat_message("assistant"):
-            st.markdown(
-                "Hi — I answer questions about **Zaid Ahmed** for recruiters and hiring teams. "
-                "Use a starter below or type your own question."
-            )
-            st.markdown('<div class="starter-wrap"></div>', unsafe_allow_html=True)
-            for i in range(0, len(CONVERSATION_STARTERS), 2):
-                c1, c2 = st.columns(2)
-                with c1:
+if not st.session_state.history:
+    with st.chat_message("assistant"):
+        st.markdown(
+            "Hi — I answer questions about **Zaid Ahmed** for recruiters and hiring teams. "
+            "Use a starter below or type your own question."
+        )
+        st.markdown('<div class="starter-wrap"></div>', unsafe_allow_html=True)
+        for i in range(0, len(CONVERSATION_STARTERS), 2):
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button(
+                    CONVERSATION_STARTERS[i],
+                    key=f"starter_{i}",
+                    use_container_width=True,
+                ):
+                    st.session_state._turn_query = CONVERSATION_STARTERS[i]
+                    st.rerun()
+            if i + 1 < len(CONVERSATION_STARTERS):
+                with c2:
                     if st.button(
-                        CONVERSATION_STARTERS[i],
-                        key=f"starter_{i}",
+                        CONVERSATION_STARTERS[i + 1],
+                        key=f"starter_{i + 1}",
                         use_container_width=True,
                     ):
-                        st.session_state._turn_query = CONVERSATION_STARTERS[i]
+                        st.session_state._turn_query = CONVERSATION_STARTERS[i + 1]
                         st.rerun()
-                if i + 1 < len(CONVERSATION_STARTERS):
-                    with c2:
-                        if st.button(
-                            CONVERSATION_STARTERS[i + 1],
-                            key=f"starter_{i + 1}",
-                            use_container_width=True,
-                        ):
-                            st.session_state._turn_query = CONVERSATION_STARTERS[i + 1]
-                            st.rerun()
 
-    if prompt := st.chat_input("Ask about experience, skills, education, or role fit…"):
-        st.session_state._turn_query = prompt.strip()
-        st.rerun()
+if prompt := st.chat_input("Ask about experience, skills, education, or role fit…"):
+    st.session_state._turn_query = prompt.strip()
+    st.rerun()
